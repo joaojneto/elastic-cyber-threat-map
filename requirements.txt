@@ -1,0 +1,4 @@
+Flask
+elastic-apm[flask]
+flask-socketio
+eventlet

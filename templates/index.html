@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link rel="icon" type="image/png" href="static/images/elastic_logo.png" />
+    <title>Elastic Cyber Threat Map</title>
+    <style type="text/css">
+        html {
+            overflow: auto;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+            border: none;
+            background-color: #212222;
+            color: white;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: larger;
+            overflow: hidden;
+        }
+
+        iframe {
+            height: 90%;
+            width: 100%;
+            margin: 0px;
+            padding: 0px;
+            display: block;
+            border: none;
+            overflow: hidden;
+        }
+
+        img {
+            position: absolute;
+            left: 35%;
+            top: 2%;
+            width: 50px;
+            height: 40px;
+
+        }
+
+        /*caso resolução for no máximo 992px*/
+        @media screen and (max-width: 992px) {
+            img {
+                position: absolute;
+                left: 20%;
+                top: 1%;
+                width: 50px;
+                height: 40px;
+
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Elastic Cyber Threat Map</h3>
+    <img src="static/images/elastic_logo.png">
+    <!-- iFrame embutido -->
+    <iframe id="raven-iframe" src="static/src/raven.html" frameborder="0" scrolling="auto"></iframe>
+
+    <script type="text/javascript">
+        function initRaven() {
+            return new Promise((resolve, reject) => {
+                const ravenIframe = document.getElementById('raven-iframe');
+
+                ravenIframe.addEventListener("load", function () {
+                    console.log("Iframe carregado."); // Log para verificar se o iframe foi carregado
+
+                    var raven_options = {
+                        'world_type': null,
+                        'selected_countries': [],
+                        'remove_countries': ['aq'],
+                        'height': window.innerHeight,
+                        'width': window.innerWidth,
+                        'backup_background_color': '#212222',
+                        'orginal_country_color': '#737373',
+                        'clicked_country_color': '#6c4242',
+                        'selected_country_color': '#ff726f',
+                        'attack_output': true,
+                        'global_timeout': 2000,
+                        'global_stats_limit': 10,
+                        'db_length': 1000,
+                        'location': 'scripts',
+                        'panels': ['multi-output', 'single-output', 'tooltip', 'random', 'insert', 'taskbar'],
+                        'disable': [],
+                        'websocket': {
+                            'server': 'ws://' + window.location.hostname + ':5678',
+                            'request_timeout': 3000
+                        },
+                        'verbose': false
+                    };
+
+                    // Acessa a variável raven
+                    var raven = ravenIframe.contentWindow.raven;
+                    console.log("Raven acessado:", raven); // Log para verificar se raven está acessível
+
+                    // Verifica se a variável raven está definida
+                    if (raven) {
+                        window['raven'] = raven; // Atribui raven ao escopo global
+                        window['raven'].init_all(raven_options);
+                        window['raven'].init_world();
+                        console.log("Raven inicializado com sucesso."); // Log para verificar a inicialização
+                        resolve(); // Resolve a Promise se tudo estiver bem
+                    } else {
+                        console.error("raven não está definido após o carregamento do iframe");
+                        reject("raven não está definido");
+                    }
+                });
+            });
+        }
+
+        // Chama a função de inicialização
+        initRaven().then(() => {
+            // Adiciona dados à tabela após a inicialização com um atraso
+            setTimeout(() => {
+                if (window['raven']) {
+
+                    console.log("Adicionando dados à tabela...");
+                    // Chama o servidor Flask para obter a linha do arquivo
+                    setInterval(() => {
+                        fetch('/get_data')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.line) {
+                                    console.log(data.line);
+                                    // Executa a linha recebida como código JavaScript
+                                    eval(data.line);
+                                }
+                            })
+                            .catch(error => console.error('Error:', error));
+                    }, 500);
+                    console.log("Dados adicionados à tabela."); // Log de confirmação
+                }
+            }, 2000); // Atraso de 2000 milissegundos (2 segundos)
+        }).catch((error) => {
+            console.error("Erro na inicialização do raven:", error);
+        });
+    </script>
+
+</body>
+
+</html>
